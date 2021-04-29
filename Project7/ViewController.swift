@@ -10,7 +10,8 @@ import UIKit
 class ViewController: UITableViewController {
     
     var petitions = [Petition]()
-    
+    var filteredPetitions = [Petition]()
+    var allPetitions = [Petition]()
     
 
     override func viewDidLoad() {
@@ -28,6 +29,11 @@ class ViewController: UITableViewController {
         }
         
         
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .organize, target: self, action: #selector(filterPetitions))
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .bookmarks, target: self, action: #selector(showCredits))
+        
+        
         
         
         if let url = URL(string: urlString) {
@@ -40,6 +46,20 @@ class ViewController: UITableViewController {
             }
         }
     
+    
+   
+    
+    
+    @objc func showCredits() {
+//        instantiate our alert controller
+        let petitionCredit = "Data pulled from We The People API of the Whitehouse"
+        
+        let alert = UIAlertController(title: "Credit", message: petitionCredit, preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .cancel))
+        present(alert, animated: true)
+    }
+    
     func showError() {
         let ac = UIAlertController(title: "Loading error", message: "There was a problem loading the data.", preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: "OK", style: .default))
@@ -51,6 +71,8 @@ class ViewController: UITableViewController {
         
         if let jsonPetitions = try? decoder.decode(Petitions.self, from: json) {
             petitions = jsonPetitions.results
+            filteredPetitions = jsonPetitions.results
+            allPetitions = jsonPetitions.results
             tableView.reloadData()
         }
     }
@@ -73,5 +95,51 @@ class ViewController: UITableViewController {
         vc.detailItem = petitions[indexPath.row]
         navigationController?.pushViewController(vc, animated: true)
     }
+    
+    @objc func filterPetitions() {
+
+        
+        let ac = UIAlertController(title: "Filter Petitions", message: "Search by keyword", preferredStyle: .alert)
+        ac.addTextField()
+        
+        let submitFilter = UIAlertAction(title: "Filter", style: .default) {
+            [weak self, weak ac] _ in
+            guard let filterQuery = ac?.textFields?[0].text else { return }
+            self?.submit(filterQuery)
+            
+        }
+        
+        ac.addAction(UIAlertAction(title: "Clear", style: .cancel, handler: clearFilter))
+        ac.addAction(submitFilter)
+        
+        present(ac, animated: true)
+        
+        
+        
+    }
+    
+    func submit(_ filterQuery: String) {
+        
+        
+        petitions = filteredPetitions.filter {
+            $0.title.lowercased().contains(filterQuery) || $0.body.lowercased().contains(filterQuery)
+        }
+        
+        tableView.reloadData()
+    }
+    
+    func clearFilter(clear: UIAlertAction!) {
+        
+        petitions = allPetitions
+        tableView.reloadData()
+    }
 }
+
+
+
+
+// CHALLENGE
+// 1. Add barbuttonItem to prompt an alert to tell users the credits [X]
+// 2. Add a way to filter petitions [ ]
+// 3. Experiment with HTML a bit [ ]
 
